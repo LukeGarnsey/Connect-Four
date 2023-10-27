@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[8]:
 
 
+from colorama import init
+init()
+from colorama import Fore
 boardWidth = 7
 boardHeight = 6
 wallSpace = "|"
 emptySpace = "_"
-redPiece = "R"
-yellowPiece = "Y"
+piece = "O"
+playerOneColor = Fore.RED
+playerTwoColor = Fore.BLUE
 
 
 def board_setup():
     board = []
     row = []
     for _ in range(boardWidth):
-        row.append(emptySpace)
+        row.append((emptySpace, 0))
 
     for _ in range(boardHeight):
         board.append([x for x in row])
@@ -42,34 +46,41 @@ def board_setup():
     # board[2][4] = redPiece
 
 
-# In[ ]:
+# In[10]:
 
 
 def display_board(board):
     index = boardHeight - 1
     for item in reversed(board):
-        rowString = wallSpace
+        rowString = Fore.GREEN + wallSpace
         for loc in item:
-           rowString += loc
-           rowString += wallSpace
+            color = Fore.GREEN
+            if loc[1] == 1:
+                color = playerOneColor 
+            elif loc[1] == 2:
+                color = playerTwoColor
+            rowString += color + loc[0]
+            rowString += Fore.GREEN + wallSpace
 
         print(rowString)
         index -= 1
 
     finalRow = " "
     for index in range(boardWidth):
-        finalRow += str(index + 1)
+        finalRow += Fore.WHITE + str(index + 1)
         finalRow += " "
     print(finalRow)
 
 
-# In[ ]:
+# In[11]:
 
 
-def get_input(board):
+def get_input(board, player):
     value = ""
+    color = playerOneColor if player == 1 else playerTwoColor
+    inputText = color + "Player One " + Fore.WHITE + "Place " + color + "piece " + Fore.WHITE + "(1 - 7): "
     while(value.isdigit() == False):
-        value = input("Select column (1 - 7) to place piece: ")
+        value = input(inputText)
         if value.isdigit() == False or int(value) > boardWidth or int(value) < 1:
             print("Not 1 - 7")
             value = ""
@@ -79,46 +90,45 @@ def get_input(board):
             value = ""
             continue
 
-    print("value Accepted " + value)
     return int(value) - 1
 
 def check_column(board, index):
     for rowNum, row in enumerate(board):
         #print(row[index])
-        if row[index] != emptySpace:
+        if row[index][1] != 0:
             continue
         #print("Place at " + str(rowNum))
         return rowNum
     return -1
 
 
-# In[ ]:
+# In[12]:
 
 
-def check_board_for_win(board, checkFor):
+def check_board_for_win(board, checkForPlayer):
     verticalSet = set()
     horizontalSet = set()
     diagUpSet = set()
     diagDownSet = set()
     for rowIndex, row in enumerate(board):
         for columnIndex, cell in enumerate(row):
-            if cell == checkFor:
-                checkUp, verticalSet = vertical_check(board, rowIndex, columnIndex, checkFor, verticalSet)
+            if cell[1] == checkForPlayer:
+                checkUp, verticalSet = vertical_check(board, rowIndex, columnIndex, checkForPlayer, verticalSet)
                 if len(checkUp) == 4:
                     # print("VertWIN {1} {0}".format(checkUp, checkFor))
                     return True
                 
-                checkRight, horizontalSet = horizontal_check(board, rowIndex, columnIndex, checkFor, horizontalSet)
+                checkRight, horizontalSet = horizontal_check(board, rowIndex, columnIndex, checkForPlayer, horizontalSet)
                 if len(checkRight) == 4:
                     # print("HozWin {1} {0}".format(checkRight, checkFor))
                     return True
 
-                checkDiagUp, diagUpSet = diagnal_up_check(board, rowIndex, columnIndex, checkFor, diagUpSet)
+                checkDiagUp, diagUpSet = diagnal_up_check(board, rowIndex, columnIndex, checkForPlayer, diagUpSet)
                 if len(checkDiagUp) == 4:
                     # print("DiagUpWin {1} {0}".format(checkDiagUp, checkFor))
                     return True
 
-                checkDiagDown, diagDownSet = diagnal_down_check(board, rowIndex, columnIndex, checkFor, diagDownSet)
+                checkDiagDown, diagDownSet = diagnal_down_check(board, rowIndex, columnIndex, checkForPlayer, diagDownSet)
                 if len(checkDiagDown) == 4:
                     # print("DiagDownWin {1} {0}".format(checkDiagDown, checkFor))
                     return True
@@ -135,7 +145,7 @@ def vertical_check(board, rowIndex, columnIndex, checkFor, verticalSet):
     for i in range(3):
         if rowIndex + i + 1 >= boardHeight:
             break
-        if board[rowIndex + i + 1][columnIndex] != checkFor:
+        if board[rowIndex + i + 1][columnIndex][1] != checkFor:
             break
         matchList.append((rowIndex + 1 + i, debugColumnIndex))
         verticalSet.add((rowIndex + 1 + i, debugColumnIndex))
@@ -152,7 +162,7 @@ def horizontal_check(board, rowIndex, columnIndex, checkFor, horizontalSet):
     for i in range(3):
         if columnIndex + i + 1 >= boardWidth:
             break
-        if board[rowIndex][columnIndex + i + 1] != checkFor:
+        if board[rowIndex][columnIndex + i + 1][1] != checkFor:
             break
         matchList.append((rowIndex, debugColumnIndex+ i + 1))
         horizontalSet.add((rowIndex, debugColumnIndex+ i + 1))
@@ -169,7 +179,7 @@ def diagnal_up_check(board, rowIndex, columnIndex, checkFor, listSet):
     for i in range(3):
         if columnIndex + i + 1 >= boardWidth or rowIndex + i + 1 >= boardHeight:
             break
-        if board[rowIndex + i + 1][columnIndex + i + 1] != checkFor:
+        if board[rowIndex + i + 1][columnIndex + i + 1][1] != checkFor:
             break
         matchList.append((rowIndex + i + 1, debugColumnIndex + i + 1))
         listSet.add((rowIndex + i + 1, debugColumnIndex + i + 1))
@@ -186,7 +196,7 @@ def diagnal_down_check(board, rowIndex, columnIndex, checkFor, listSet):
     for i in range(3):
         if columnIndex + i + 1 >= boardWidth or rowIndex - i - 1 < 0:
             break
-        if board[rowIndex - i - 1][columnIndex + i + 1] != checkFor:
+        if board[rowIndex - i - 1][columnIndex + i + 1][1] != checkFor:
             break
         matchList.append((rowIndex - i - 1, debugColumnIndex + i + 1))
         listSet.add((rowIndex - i - 1, debugColumnIndex + i + 1))
@@ -194,55 +204,55 @@ def diagnal_down_check(board, rowIndex, columnIndex, checkFor, listSet):
     return (matchList, listSet)
 
 
-# In[ ]:
+# In[13]:
 
 
-def player_take_turn(board, piece):
-    columnIndex = get_input(board)
+def player_take_turn(board, player):
+    columnIndex = get_input(board, player)
     rowIndex = check_column(board, columnIndex)
-    board[rowIndex][columnIndex] = piece
+    board[rowIndex][columnIndex] = (piece, player)
 
 
-# In[ ]:
+# In[14]:
 
 
 from IPython.display import clear_output
 import time
 gameActive = True
-isRedPlayerTurn = True
+isPlayerOne = True
 board = board_setup()
 count = 0
 
 while(gameActive):
-    pieceTurn = redPiece if isRedPlayerTurn else yellowPiece
-    time.sleep(.2)
+    playerTurn = 1 if isPlayerOne else 2
+    time.sleep(.1)
     display_board(board)
-    player_take_turn(board, pieceTurn)
+    player_take_turn(board, playerTurn)
     clear_output()
     count += 1
-    isWin = check_board_for_win(board, pieceTurn)
+    isWin = check_board_for_win(board, playerTurn)
     if isWin or count == 42:
         display_board(board)
         if isWin == False:
-            print("Game is a DRAW!")
-        elif isRedPlayerTurn:
-            print("Red Player Win")
+            print("Game is a DRAW.")
+        elif isPlayerOne:
+            print(playerOneColor + "Player One Wins!")
         else:
-            print("Yellow Player Win")
+            print(playerTwoColor + "Player Two Wins!")
         time.sleep(.15)
         value = ""
         while(value.upper() != "Y" and value.upper() != "N"):
-            value = input("PLay Again? ")
+            value = input("PLay Again? (N or Y)")
 
         if value.upper() == "N":
             gameActive = False
         else:
             board = board_setup()
-            isRedPlayerTurn = True
+            isPlayerOne = True
             count = 0
             clear_output()
     else:
-        isRedPlayerTurn = not isRedPlayerTurn
+        isPlayerOne = not isPlayerOne
 
 print("Goodbye!")
 
